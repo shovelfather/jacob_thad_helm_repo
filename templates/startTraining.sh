@@ -1,4 +1,5 @@
-/usr/bin/env bash
+#!/usr/bin/env bash
+
 #################
 #
 # This script spits out a values.yaml
@@ -18,6 +19,10 @@
 # 	echo "No customer folder found.  It should be checked out from eir or it can be faked by creating /opt/helm/customers/"
 # 	exit 5
 # fi
+
+if [ ! -d "../customer_values" ]; then
+	echo "creating customer_values directory"
+fi
 
 printf "Creating a new Training Instance\n\n"
 printf "Enter Instance Name: "
@@ -40,7 +45,8 @@ sed -i "s/{ADMIN_PASS}/${adminPass}/" "${sqlScript}"
 # dockerentrypoint.d or something like that
 
 valuesFile="${instanceName}.yaml"
-cp "../values.yaml" "../${valuesFile}"
+valuesFileLocation="../customer_values/${valuesFile}"
+cp "../values.yaml" "${valuesFileLocation}"
 url="${instanceName}.billk8s.decisions.com"
 
 # sed -i "s/\${PG_USER}/${pgUser}/" training/values.yaml
