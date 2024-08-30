@@ -1,4 +1,4 @@
-#!/bin/bash
+/usr/bin/env bash
 #################
 #
 # This script spits out a values.yaml
@@ -10,13 +10,14 @@
 #
 #################
 
-echo Checking Paths.
-if [ -d /opt/helm/customers ]; then
-	echo "Customers Git Repo appears to exist."
-else
-	echo "No customer folder found.  It should be checked out from eir or it can be faked by creating /opt/helm/customers/"
-	exit 5
-fi
+# WARN: Ignoring this for local testing purposes. Uncomment at your own risk, if needed.
+# echo Checking Paths.
+# if [ -d /opt/helm/customers ]; then
+# 	echo "Customers Git Repo appears to exist."
+# else
+# 	echo "No customer folder found.  It should be checked out from eir or it can be faked by creating /opt/helm/customers/"
+# 	exit 5
+# fi
 
 printf "Creating a new Training Instance\n\n"
 printf "Enter Instance Name: "
@@ -29,30 +30,26 @@ echo -n "Enter Admin User Email to Create: "
 read -r adminEmail
 echo -n "Enter Admin User Password to Create: "
 read -r adminPass
-echo -n "Enter Postgres Database Name to Create: "
-# read -r pgDBName
-echo -n "Enter Postgres Admin User: "
-read -r pgUser
-echo -n "Enter Postgres Admin Password: "
-read -r pgPass
 
-sqlScript="pg_creds.sh"
-sed "s/\${ADMIN_EMAIL}/${adminEmail}" /opt/helm/k8s-helm/training/templates/pg_creds.sh > "${sqlScript}"
-sed -i "s/\${ADMIN_PASS}/${adminPass}/" "${sqlScript}"
+sqlScript="pg_creds_${instanceName}.sh"
+cp pg_creds.sh "${sqlScript}" # so we always keep a master copy of the template
+sed -i "s/{ADMIN_EMAIL}/${adminEmail}/" "${sqlScript}"
+sed -i "s/{ADMIN_PASS}/${adminPass}/" "${sqlScript}"
 
-#TODO make entrypoint for this script in postgres deployment, mount the volume.
+# TODO make entrypoint for this script in postgres deployment, mount the volume.
 # dockerentrypoint.d or something like that
 
 valuesFile="${instanceName}.yaml"
-url="${instanceName}".billk8s.decisions.com"
+cp "../values.yaml" "../${valuesFile}"
+url="${instanceName}.billk8s.decisions.com"
 
-sed "s/\${PG_USER}/${pgUser}/" training/values.yaml >"${valuesFile}"
+# sed -i "s/\${PG_USER}/${pgUser}/" training/values.yaml
+# sed -i "s/\${PG_DBNAME}/${pgDBName}/" $valuesFile #This should always be `decisions`
+# sed -i "s/\${PG_PASS}/${pgPass}/" "${valuesFile}"
 sed -i "s/\${CUSTOMER_ID}/${instanceName}/" "${valuesFile}"
 sed -i "s/\${VERSION}/${tag}/" "${valuesFile}"
-# sed -i "s/\${ADMIN_EMAIL}/${adminEmail}/" "${valuesFile}"
-# sed -i "s/\${ADMIN_PASS}/${adminPass}/" "${valuesFile}"
-#sed -i "s/\${PG_DBNAME}/$pgDBName/" $valuesFile #This should always be `decisions`
-sed -i "s/\${PG_PASS}/${pgPass}/" "${valuesFile}"
+sed -i "s/\${ADMIN_EMAIL}/${adminEmail}/" "${valuesFile}"
+sed -i "s/\${ADMIN_PASS}/${adminPass}/" "${valuesFile}"
 echo "Writing url:  ${url}"
 sed -i "s,\${HOST_VALUE},${url}," "$valuesFile"
 
