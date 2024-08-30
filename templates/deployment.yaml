@@ -41,7 +41,7 @@ spec:
               mountPath: /var/lib/postgresql
         - name: decisions
           # DockerHub Image available.
-          image: "{{ .Values.docker.containerImage }}:{{ .Values.docker.tag }}"
+          image: "decisionscore/platform:{{ .Values.containerTag }}"
           ports:
             - name: http
               containerPort: 80
