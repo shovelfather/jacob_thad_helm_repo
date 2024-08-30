@@ -16,9 +16,9 @@ securityContext: {}
 customerId: ${CUSTOMER_ID}
 containerTag: ${VERSION}
 database:
-  postgresUser: ${PG_USER}
-  postgresPassword: ${PG_PASS}
-  postgresDBName: ${PG_DBNAME}
+  postgresUser: postgres
+  postgresPassword: admin
+  postgresDBName: decisions
 
 # Each training pod should have a cluster IP
 # and allow ingress to route to the pod appropriately
