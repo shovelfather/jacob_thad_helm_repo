@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "training.fullname" . }}
+  labels:
+    {{- include "training.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "training.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "training.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: postgres
+          image: postgres:16.3
+          ports:
+            - containerPort: 5432
+              name: postgresql
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.database.postgresUser }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.postgresPassword }}
+          volumeMounts:
+            - name: postgresql-pvc
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-init-script
+              mountPath: /var/lib/postgresql
+        - name: decisions
+          # DockerHub Image available.
+          image: "{{ .Values.docker.containerImage }}:{{ .Values.docker.tag }}"
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: DECISIONS_DATABASECONNECTSTRING
+              value: Host=localhost;Database=decisions;Port=5432;Username={{ .Values.database.postgresUser }};Password={{ .Values.database.postgresPassword }}; 
+            - name: DECISIONS_DATABASETYPE
+              value: POSTGRES
+            - name: DECISIONS_FILESTORAGELOCATION
+              value: /var/decisions-filestorage
+            - name: DECISIONS_ADMINISTRATOR_EMAIL
+              value: {{ .Values.admin.adminEmail }}
+            - name: DECISIONS_ADMINISTRATOR_PASSWORD
+              value: {{ .Values.admin.adminPassword }}
+            - name: DECISIONS_PORTALBASEURL
+              # For training we only allow one host.
+              {{- with (index .Values.ingress.hosts 0) }}
+              value: http://{{ .host }}
+              {{- end }}
+          volumeMounts:
+            - name: dec-file-store
+              mountPath: /var/decisions-filestorage
+      volumes:
+        - name: postgresql-pvc
+          hostPath:
+            path: "/opt/pgsqldata/{{ .Values.customerId }}"
+          #persistentVolumeClaim:
+            # specify PVC name you defined
+            # claimName: pg-pvc
+        #HERE JACOB
+        - name: dec-file-store
+          hostPath:
+            path: "/opt/decstore/{{ .Values.customerId }}"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

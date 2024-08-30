@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-templates"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: pre-install-job
+        image: "busybox"
+        command: ['/bin/sh','-c','echo hi']
+        volumeMounts:
+          - name: postgresql-pvc
+            mountPath: /var/lib/postgresql/data
+          - name: dec-file-store
+            mountPath: /var/decisions-filestorage
+          - name: template-store
+            mountPath: /var/templates
+      volumes:
+        - name: postgresql-pvc
+          hostPath:
+            path: "/opt/pgsqldata/{{ .Values.customerId }}"
+        - name: dec-file-store
+          hostPath:
+            path: "/opt/decstore/{{ .Values.customerId }}"
+        - name: template-store
+          hostPath:
+            path: "/mnt/nodeshare"

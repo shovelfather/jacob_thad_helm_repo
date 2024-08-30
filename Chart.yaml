@@ -1,0 +1,8 @@
+apiVersion: v2
+name: training
+description: Default training image with Decisions application server and postgres embedded.  This can be used for the traiing team.
+
+# A chart can be either an 'application' or a 'library' chart.
+type: application
+version: 1.0.0
+appVersion: "8.11.0"
