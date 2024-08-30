@@ -36,7 +36,7 @@ read -r adminEmail
 echo -n "Enter Admin User Password to Create: "
 read -r adminPass
 
-sqlScript="pg_creds_${instanceName}.sh"
+sqlScript="../customer_values/pg_creds_${instanceName}.sh"
 cp pg_creds.sh "${sqlScript}" # so we always keep a master copy of the template
 sed -i "s/{ADMIN_EMAIL}/${adminEmail}/" "${sqlScript}"
 sed -i "s/{ADMIN_PASS}/${adminPass}/" "${sqlScript}"
@@ -44,23 +44,23 @@ sed -i "s/{ADMIN_PASS}/${adminPass}/" "${sqlScript}"
 # TODO make entrypoint for this script in postgres deployment, mount the volume.
 # dockerentrypoint.d or something like that
 
-valuesFile="${instanceName}.yaml"
-valuesFileLocation="../customer_values/${valuesFile}"
+valuesFileName="${instanceName}.yaml"
+valuesFileLocation="../customer_values/${valuesFileName}"
 cp "../values.yaml" "${valuesFileLocation}"
 url="${instanceName}.billk8s.decisions.com"
 
 # sed -i "s/\${PG_USER}/${pgUser}/" training/values.yaml
 # sed -i "s/\${PG_DBNAME}/${pgDBName}/" $valuesFile #This should always be `decisions`
 # sed -i "s/\${PG_PASS}/${pgPass}/" "${valuesFile}"
-sed -i "s/\${CUSTOMER_ID}/${instanceName}/" "${valuesFile}"
-sed -i "s/\${VERSION}/${tag}/" "${valuesFile}"
-sed -i "s/\${ADMIN_EMAIL}/${adminEmail}/" "${valuesFile}"
-sed -i "s/\${ADMIN_PASS}/${adminPass}/" "${valuesFile}"
+sed -i "s/\${CUSTOMER_ID}/${instanceName}/" "${valuesFileLocation}"
+sed -i "s/\${VERSION}/${tag}/" "${valuesFileLocation}"
+sed -i "s/\${ADMIN_EMAIL}/${adminEmail}/" "${valuesFileLocation}"
+sed -i "s/\${ADMIN_PASS}/${adminPass}/" "${valuesFileLocation}"
 echo "Writing url:  ${url}"
-sed -i "s,\${HOST_VALUE},${url}," "$valuesFile"
+sed -i "s,\${HOST_VALUE},${url}," "$valuesFileLocation"
 
 mkdir /opt/helm/customers/"${instanceName}"
-mv "${valuesFile}" /opt/helm/customers/"${instanceName}/"
+mv "${valuesFileLocation}" /opt/helm/customers/"${instanceName}/"
 
 printf "\r\n-- Values file Created and stored at: /opt/helm/customers/%s", "${instanceName}"
 printf "\r\nRun helm install to spin up environment."
